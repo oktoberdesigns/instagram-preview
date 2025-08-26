@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Feed Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #fafafa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .profile-header {
+            padding: 20px;
+            border-bottom: 1px solid #dbdbdb;
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+            padding: 3px;
+            margin-right: 15px;
+        }
+
+        .profile-pic img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+
+        .profile-details h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-weight: 600;
+        }
+
+        .bio {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #262626;
+        }
+
+        .feed {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: #dbdbdb;
+        }
+
+        .post {
+            aspect-ratio: 1;
+            background: #f0f0f0;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .post img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .post-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            color: white;
+            font-size: 12px;
+        }
+
+        .post:hover .post-overlay {
+            opacity: 1;
+        }
+
+        .controls {
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #262626;
+        }
+
+        .control-group input, .control-group textarea, .control-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #dbdbdb;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .control-group textarea {
+            resize: vertical;
+            height: 60px;
+        }
+
+        .add-post-btn {
+            background: #0095f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .add-post-btn:hover {
+            background: #0084e6;
+        }
+
+        .post-form {
+            display: none;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .post-form.active {
+            display: block;
+        }
+
+        .post-form input {
+            margin-bottom: 10px;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: #0095f6;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #dbdbdb;
+            color: #262626;
+        }
+
+        .client-selector {
+            margin-bottom: 20px;
+        }
+
+        .placeholder-post {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div class="control-group">
+            <label>Client Profile</label>
+            <select id="clientSelect">
+                <option value="default">Default Profile</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="@username" value="@your_brand">
+        </div>
+
+        <div class="control-group">
+            <label>Profile Picture URL</label>
+            <input type="url" id="profilePic" placeholder="https://...">
+        </div>
+
+        <div class="control-group">
+            <label>Bio</label>
+            <textarea id="bio" placeholder="Your bio here...">✨ Creating amazing content
+📍 New York, NY
+👇 Link in bio</textarea>
+        </div>
+
+        <div class="control-group">
+            <label>Posts Count</label>
+            <input type="number" id="postsCount" value="127">
+        </div>
+
+        <div class="control-group">
+            <label>Followers Count</label>
+            <input type="number" id="followersCount" value="1234">
+        </div>
+
+        <div class="control-group">
+            <label>Following Count</label>
+            <input type="number" id="followingCount" value="567">
+        </div>
+
+        <button class="add-post-btn" onclick="togglePostForm()">Add Post</button>
+        
+        <div class="post-form" id="postForm">
+            <input type="url" id="newPostImage" placeholder="Image URL">
+            <input type="text" id="newPostCaption" placeholder="Post caption/description">
+            <div class="form-buttons">
+                <button class="btn btn-primary" onclick="addPost()">Add Post</button>
+                <button class="btn btn-secondary" onclick="togglePostForm()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="profile-header">
+            <div class="profile-info">
+                <div class="profile-pic">
+                    <img id="profileImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23ddd'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.35em' font-family='Arial' font-size='14' fill='%23999'%3EPic%3C/text%3E%3C/svg%3E" alt="Profile">
+                </div>
+                <div class="profile-details">
+                    <h2 id="displayUsername">@your_brand</h2>
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <div class="stat-number" id="displayPosts">127</div>
+                            <div>posts</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number" id="displayFollowers">1,234</div>
+                            <div>followers</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number" id="displayFollowing">567</div>
+                            <div>following</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bio" id="displayBio">✨ Creating amazing content<br>📍 New York, NY<br>👇 Link in bio</div>
+        </div>
+        
+        <div class="feed" id="feed">
+            <!-- Posts will be added here -->
+        </div>
+    </div>
+
+    <script>
+        // Store client profiles
+        let clientProfiles = {
+            default: {
+                username: '@your_brand',
+                bio: '✨ Creating amazing content\n📍 New York, NY\n👇 Link in bio',
+                profilePic: '',
+                postsCount: 127,
+                followersCount: 1234,
+                followingCount: 567,
+                posts: []
+            }
+        };
+
+        let currentClient = 'default';
+        let posts = [];
+
+        // Initialize with some sample posts
+        function initializeSamplePosts() {
+            const samplePosts = [
+                { image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="300"%3E%3Crect width="300" height="300" fill="%23ff6b6b"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".35em" font-family="Arial" font-size="18" fill="white"%3EPost 1%3C/text%3E%3C/svg%3E', caption: 'Amazing content coming your way!' },
+                { image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="300"%3E%3Crect width="300" height="300" fill="%234ecdc4"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".35em" font-family="Arial" font-size="18" fill="white"%3EPost 2%3C/text%3E%3C/svg%3E', caption: 'Behind the scenes content' },
+                { image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="300"%3E%3Crect width="300" height="300" fill="%2345b7d1"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".35em" font-family="Arial" font-size="18" fill="white"%3EPost 3%3C/text%3E%3C/svg%3E', caption: 'Product showcase' },
+                { image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="300"%3E%3Crect width="300" height="300" fill="%2396ceb4"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".35em" font-family="Arial" font-size="18" fill="white"%3EPost 4%3C/text%3E%3C/svg%3E', caption: 'Daily inspiration' },
+                { image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="300"%3E%3Crect width="300" height="300" fill="%23feca57"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".35em" font-family="Arial" font-size="18" fill="white"%3EPost 5%3C/text%3E%3C/svg%3E', caption: 'Weekly highlights' },
+                { image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="300"%3E%3Crect width="300" height="300" fill="%23ff9ff3"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".35em" font-family="Arial" font-size="18" fill="white"%3EPost 6%3C/text%3E%3C/svg%3E', caption: 'Community love' }
+            ];
+            
+            clientProfiles.default.posts = samplePosts;
+            posts = [...samplePosts];
+            renderFeed();
+        }
+
+        // Add event listeners
+        document.getElementById('username').addEventListener('input', updateProfile);
+        document.getElementById('bio').addEventListener('input', updateProfile);
+        document.getElementById('profilePic').addEventListener('input', updateProfile);
+        document.getElementById('postsCount').addEventListener('input', updateProfile);
+        document.getElementById('followersCount').addEventListener('input', updateProfile);
+        document.getElementById('followingCount').addEventListener('input', updateProfile);
+        document.getElementById('clientSelect').addEventListener('change', switchClient);
+
+        function updateProfile() {
+            const username = document.getElementById('username').value || '@your_brand';
+            const bio = document.getElementById('bio').value.replace(/\n/g, '<br>');
+            const profilePic = document.getElementById('profilePic').value;
+            const postsCount = document.getElementById('postsCount').value || '0';
+            const followersCount = document.getElementById('followersCount').value || '0';
+            const followingCount = document.getElementById('followingCount').value || '0';
+
+            document.getElementById('displayUsername').textContent = username;
+            document.getElementById('displayBio').innerHTML = bio;
+            document.getElementById('displayPosts').textContent = formatNumber(postsCount);
+            document.getElementById('displayFollowers').textContent = formatNumber(followersCount);
+            document.getElementById('displayFollowing').textContent = formatNumber(followingCount);
+
+            const profileImg = document.getElementById('profileImage');
+            if (profilePic) {
+                profileImg.src = profilePic;
+                profileImg.onerror = function() {
+                    this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23ddd'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.35em' font-family='Arial' font-size='14' fill='%23999'%3EPic%3C/text%3E%3C/svg%3E";
+                };
+            }
+
+            // Save to current client profile
+            clientProfiles[currentClient] = {
+                username,
+                bio: document.getElementById('bio').value,
+                profilePic,
+                postsCount: parseInt(postsCount),
+                followersCount: parseInt(followersCount),
+                followingCount: parseInt(followingCount),
+                posts: posts
+            };
+        }
+
+        function formatNumber(num) {
+            const n = parseInt(num);
+            if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+            if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+            return n.toString();
+        }
+
+        function togglePostForm() {
+            const form = document.getElementById('postForm');
+            form.classList.toggle('active');
+            if (!form.classList.contains('active')) {
+                document.getElementById('newPostImage').value = '';
+                document.getElementById('newPostCaption').value = '';
+            }
+        }
+
+        function addPost() {
+            const imageUrl = document.getElementById('newPostImage').value;
+            const caption = document.getElementById('newPostCaption').value;
+
+            if (imageUrl) {
+                const newPost = { image: imageUrl, caption: caption || 'New post' };
+                posts.unshift(newPost);
+                clientProfiles[currentClient].posts = posts;
+                renderFeed();
+                togglePostForm();
+                
+                // Update post count
+                const newCount = posts.length;
+                document.getElementById('postsCount').value = newCount;
+                document.getElementById('displayPosts').textContent = formatNumber(newCount);
+            }
+        }
+
+        function renderFeed() {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = '';
+
+            posts.forEach((post, index) => {
+                const postDiv = document.createElement('div');
+                postDiv.className = 'post';
+                
+                const img = document.createElement('img');
+                img.src = post.image;
+                img.alt = post.caption;
+                img.onerror = function() {
+                    postDiv.innerHTML = '<div class="placeholder-post">Image not found</div>';
+                };
+
+                const overlay = document.createElement('div');
+                overlay.className = 'post-overlay';
+                overlay.textContent = post.caption.substring(0, 50) + (post.caption.length > 50 ? '...' : '');
+
+                postDiv.appendChild(img);
+                postDiv.appendChild(overlay);
+                feed.appendChild(postDiv);
+            });
+        }
+
+        function switchClient() {
+            const selectedClient = document.getElementById('clientSelect').value;
+            currentClient = selectedClient;
+            
+            const profile = clientProfiles[selectedClient];
+            document.getElementById('username').value = profile.username;
+            document.getElementById('bio').value = profile.bio;
+            document.getElementById('profilePic').value = profile.profilePic || '';
+            document.getElementById('postsCount').value = profile.postsCount;
+            document.getElementById('followersCount').value = profile.followersCount;
+            document.getElementById('followingCount').value = profile.followingCount;
+            
+            posts = profile.posts;
+            updateProfile();
+            renderFeed();
+        }
+
+        // Initialize the preview
+        initializeSamplePosts();
+    </script>
+</body>
+</html>
